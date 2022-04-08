@@ -9,9 +9,9 @@ Project for Fabrick Test
 - Docker
 - Docker Compose
 
-# Way of docker compose
+# Way of docker compose + spring
 
-Just run the command
+Run
 
 ```
 docker-compose up 
@@ -19,17 +19,10 @@ docker-compose up
 
 and if all the ports are available, the following applications will start:
 
-- Postgresql: to store transaction
+- Postgresql: to store transactions
 - Adminer: db managing browser app, just go to `http://localhost:8081/`
-- fabrick-test: the Springboot application
 
-# Spring + docker comspoe
-
-If you want to run the postgres sql seperatly you need to
-- Switch docker-compose.yml with docker-compose-alt.yml
-- Change the application.properties file to point to localhost instead of postgres 
-
-
+After that, you can simply start the SpringBoot application with Maven or any IDE that supports it
 
 
 # How to use it
@@ -37,5 +30,5 @@ If you want to run the postgres sql seperatly you need to
 There's the Url to reach the swagger-ui to test it
 
 ```
-docker-compose up 
+http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config#/account-controller 
 ```
