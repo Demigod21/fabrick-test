@@ -29,7 +29,7 @@ public class AccountController {
 	AccountService accountService;
 
 	@RequestMapping(method = RequestMethod.GET, value = "/balance")
-	public BigDecimal getBalance() {
+	public BigDecimal getBalance() throws FabrickTestException {
 		String accountId = Optional.ofNullable(configProperties)
 			.map(ConfigProperties::getAccountId)
 			.orElse(Strings.EMPTY);
@@ -37,7 +37,7 @@ public class AccountController {
 	}
 
 	@RequestMapping(method = RequestMethod.GET, value = "/transactions")
-	public TransactionPayloadResponse getTransactions() {
+	public TransactionPayloadResponse getTransactions() throws FabrickTestException {
 		String accountId = Optional.ofNullable(configProperties)
 			.map(ConfigProperties::getAccountId)
 			.orElse(Strings.EMPTY);

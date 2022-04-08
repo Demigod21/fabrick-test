@@ -12,6 +12,8 @@ import com.davide.falcone.fabricktest.model.NaturalPersonBeneficiary;
 import com.davide.falcone.fabricktest.model.TaxRelief;
 import com.davide.falcone.fabricktest.model.TransactionPayloadResponse;
 import com.davide.falcone.fabricktest.model.TransactionResponse;
+import com.davide.falcone.fabricktest.repo.TransactionDTO;
+import com.davide.falcone.fabricktest.repo.TransactionRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +31,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AccountServiceImpl implements AccountService{
@@ -39,8 +42,11 @@ public class AccountServiceImpl implements AccountService{
 	@Autowired
 	ConfigProperties configProperties;
 
+	@Autowired
+	TransactionRepo transactionRepo;
+
 	@Override
-	public BigDecimal getAccountBalance(String accountId) {
+	public BigDecimal getAccountBalance(String accountId) throws FabrickTestException {
 		String accountBalanceEndpoint = configProperties.getAccountBalanceEndpoint();
 		// URI (URL) parameters
 		Map<String, String> urlParams = new HashMap<>();
@@ -52,22 +58,28 @@ public class AccountServiceImpl implements AccountService{
 
 		HttpEntity requestEntity = new HttpEntity<>(headers);
 
-		ResponseEntity<AccountBalanceResponse> response = restTemplate.exchange(accountBalanceEndpoint,
-			HttpMethod.GET,
-			requestEntity,
-			AccountBalanceResponse.class,
-			urlParams);
-		BigDecimal output = Optional.ofNullable(response)
-			.map(HttpEntity::getBody)
-			.map(AccountBalanceResponse::getPayload)
-			.map(AccountBalancePayloadResponse::getBalance)
-			.orElse(null);
+		try {
+			ResponseEntity<AccountBalanceResponse> response = restTemplate.exchange(accountBalanceEndpoint,
+				HttpMethod.GET,
+				requestEntity,
+				AccountBalanceResponse.class,
+				urlParams);
+			BigDecimal output = Optional.ofNullable(response)
+				.map(HttpEntity::getBody)
+				.map(AccountBalanceResponse::getPayload)
+				.map(AccountBalancePayloadResponse::getBalance)
+				.orElse(null);
+			return output;
 
-		return output;
+		}catch (HttpClientErrorException ex){
+			HttpStatus code = ex.getStatusCode();
+			String message = ex.getMessage();
+			throw new FabrickTestException(code, message);
+		}
 	}
 
 	@Override
-	public TransactionPayloadResponse getListTransaction(String accountId, String fromAccountingDate, String toAccountingDate) {
+	public TransactionPayloadResponse getListTransaction(String accountId, String fromAccountingDate, String toAccountingDate) throws FabrickTestException {
 		String transactionEndpoint = configProperties.getTransactionEndpoint();
 		// URI (URL) parameters
 		Map<String, String> urlParams = new HashMap<>();
@@ -84,14 +96,20 @@ public class AccountServiceImpl implements AccountService{
 
 		HttpEntity requestEntity = new HttpEntity<>(headers);
 
-		ResponseEntity<TransactionResponse> response = restTemplate.exchange(builder.buildAndExpand(urlParams).toUri() , HttpMethod.GET, requestEntity, TransactionResponse.class);
+		try {
+			ResponseEntity<TransactionResponse> response = restTemplate.exchange(builder.buildAndExpand(urlParams).toUri() , HttpMethod.GET, requestEntity, TransactionResponse.class);
+			TransactionPayloadResponse output = Optional.ofNullable(response)
+				.map(HttpEntity::getBody)
+				.map(TransactionResponse::getPayload)
+				.orElse(null);
 
-		TransactionPayloadResponse output = Optional.ofNullable(response)
-			.map(HttpEntity::getBody)
-			.map(TransactionResponse::getPayload)
-			.orElse(null);
+			return output;
 
-		return output;
+		}catch (HttpClientErrorException ex){
+			HttpStatus code = ex.getStatusCode();
+			String message = ex.getMessage();
+			throw new FabrickTestException(code, message);
+		}
 	}
 
 	@Override
@@ -110,10 +128,16 @@ public class AccountServiceImpl implements AccountService{
 
 		try {
 			ResponseEntity<MoneyTransferResponse> response = restTemplate.postForEntity(transferMoneyEndpoint, requestEntity, MoneyTransferResponse.class, urlParams);
+			TransactionDTO transactionDTO = createDTO(moneyTransferRequest);
+			transactionRepo.save(transactionDTO);
 			return response.getBody();
 		}catch (HttpClientErrorException ex){
 			HttpStatus code = ex.getStatusCode();
 			String message = ex.getMessage();
+			TransactionDTO transactionDTO = createDTO(moneyTransferRequest);
+			String messageCut = message.length()>250? message.substring(0, 249) : message;
+			transactionDTO.setErrorMessage(messageCut);
+			transactionRepo.save(transactionDTO);
 			throw new FabrickTestException(code, message);
 		}
 
@@ -143,6 +167,18 @@ public class AccountServiceImpl implements AccountService{
 		output.setDescription(description);
 		output.setExecutionDate(executionDate);
 		return output;
+	}
+
+	private TransactionDTO createDTO(MoneyTransferRequest moneyTransferRequest){
+		TransactionDTO transactionDTO = new TransactionDTO();
+		transactionDTO.setAmount(Optional.ofNullable(moneyTransferRequest)
+			.map(MoneyTransferRequest::getAmount)
+			.orElse(0));
+		transactionDTO.setTransactionDate(LocalDate.now());
+		UUID uuid = UUID.randomUUID();
+		transactionDTO.setUuid(uuid.toString());
+
+		return transactionDTO;
 	}
 
 }

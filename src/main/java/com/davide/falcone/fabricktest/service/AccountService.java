@@ -10,9 +10,9 @@ import java.math.BigDecimal;
 @Service
 public interface AccountService {
 
-	BigDecimal getAccountBalance(String accountId);
+	BigDecimal getAccountBalance(String accountId) throws FabrickTestException;
 
-	TransactionPayloadResponse getListTransaction(String accountId, String fromAccountingDate, String toAccountingDate);
+	TransactionPayloadResponse getListTransaction(String accountId, String fromAccountingDate, String toAccountingDate) throws FabrickTestException;
 
 	MoneyTransferResponse transferMoney(String receiverName, String description, String currency, String amount, String executionDate, String accountId) throws FabrickTestException;
 
