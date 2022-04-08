@@ -19,7 +19,7 @@ docker-compose up
 
 and if all the ports are available, the following applications will start:
 
-- Postgresql: to store donuts and ingredients
+- Postgresql: to store transaction
 - Adminer: db managing browser app, just go to `http://localhost:8081/`
 - fabrick-test: the Springboot application
 
