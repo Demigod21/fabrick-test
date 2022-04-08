@@ -1,6 +1,7 @@
 package com.davide.falcone.fabricktest.controller;
 
 import com.davide.falcone.fabricktest.config.ConfigProperties;
+import com.davide.falcone.fabricktest.exception.FabrickTestException;
 import com.davide.falcone.fabricktest.model.MoneyTransferResponse;
 import com.davide.falcone.fabricktest.model.TransactionPayloadResponse;
 import com.davide.falcone.fabricktest.model.TransactionResponse;
@@ -52,7 +53,7 @@ public class AccountController {
 	@PostMapping("/transfer-money")
 	@ResponseBody
 	public MoneyTransferResponse addFoo(@RequestParam String receiverName, @RequestParam String description, @RequestParam String currency,
-																			@RequestParam String amount, @RequestParam String executionDate) {
+																			@RequestParam String amount, @RequestParam String executionDate) throws FabrickTestException {
 		String accountId = Optional.ofNullable(configProperties)
 			.map(ConfigProperties::getAccountId)
 			.orElse(Strings.EMPTY);
