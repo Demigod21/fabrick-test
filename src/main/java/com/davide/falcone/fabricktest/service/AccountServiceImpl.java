@@ -11,6 +11,7 @@ import com.davide.falcone.fabricktest.model.MoneyTransferResponse;
 import com.davide.falcone.fabricktest.model.NaturalPersonBeneficiary;
 import com.davide.falcone.fabricktest.model.TaxRelief;
 import com.davide.falcone.fabricktest.model.TransactionPayloadResponse;
+import com.davide.falcone.fabricktest.model.TransactionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -21,8 +22,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -65,7 +68,30 @@ public class AccountServiceImpl implements AccountService{
 
 	@Override
 	public TransactionPayloadResponse getListTransaction(String accountId, String fromAccountingDate, String toAccountingDate) {
-		return null;
+		String transactionEndpoint = configProperties.getTransactionEndpoint();
+		// URI (URL) parameters
+		Map<String, String> urlParams = new HashMap<>();
+		urlParams.put("accountId", accountId);
+		// Query parameters
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(transactionEndpoint)
+			// Add query parameter
+			.queryParam("fromAccountingDate", LocalDate.parse(fromAccountingDate))
+			.queryParam("toAccountingDate", LocalDate.parse(toAccountingDate));
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Auth-Schema", "S2S");
+		headers.add("Api-Key", "FXOVVXXHVCPVPBZXIJOBGUGSKHDNFRRQJP");
+
+		HttpEntity requestEntity = new HttpEntity<>(headers);
+
+		ResponseEntity<TransactionResponse> response = restTemplate.exchange(builder.buildAndExpand(urlParams).toUri() , HttpMethod.GET, requestEntity, TransactionResponse.class);
+
+		TransactionPayloadResponse output = Optional.ofNullable(response)
+			.map(HttpEntity::getBody)
+			.map(TransactionResponse::getPayload)
+			.orElse(null);
+
+		return output;
 	}
 
 	@Override
